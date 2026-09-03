@@ -16,7 +16,7 @@
 
     .container {
       max-width: 800px;
-      margin: 80px auto;
+      margin: 60px auto;
       padding: 40px;
       background: white;
       border-radius: 16px;
@@ -32,7 +32,7 @@
     .subtitle {
       font-size: 20px;
       color: #555;
-      margin-bottom: 35px;
+      margin-bottom: 30px;
     }
 
     .instructions {
@@ -44,14 +44,31 @@
       margin-top: 30px;
     }
 
-    .instructions h2 {
-      margin-top: 0;
+    .voice-box {
+      margin-top: 30px;
+      padding: 25px;
+      border-radius: 14px;
+      background: #f7f8fa;
     }
 
-    .start {
+    #micButton {
+      border: none;
+      border-radius: 14px;
+      padding: 18px 30px;
+      font-size: 20px;
+      cursor: pointer;
+    }
+
+    #voiceStatus {
+      margin-top: 15px;
+      font-size: 16px;
+      color: #555;
+    }
+
+    #recognizedText {
+      margin-top: 15px;
       font-size: 18px;
-      font-weight: bold;
-      margin-top: 30px;
+      min-height: 30px;
     }
   </style>
 </head>
@@ -70,22 +87,24 @@
       <h2>Как пройти тренировку</h2>
 
       <p>1. Откройте чат в правом нижнем углу страницы.</p>
-
-      <p>2. Поздоровайтесь с виртуальным клиентом.</p>
-
-      <p>3. Введите промокод, когда тренажёр его запросит.</p>
-
-      <p>4. Ответьте на вопросы для настройки ситуации переговоров.</p>
-
-      <p>5. Проведите переговоры так, как вы проводили бы их с реальным клиентом.</p>
-
-      <p>6. Когда захотите закончить переговоры, сообщите об этом клиенту.</p>
-
-      <p>После завершения тренажёр разберёт проведённые переговоры и даст обратную связь.</p>
+      <p>2. Можно писать сообщения текстом или использовать голосовой ввод.</p>
+      <p>3. Для голосового ввода нажмите кнопку «Говорить» и произнесите вашу реплику.</p>
+      <p>4. После распознавания речь автоматически будет отправлена в чат.</p>
+      <p>5. Тренажёр будет отвечать только текстом.</p>
     </div>
 
-    <div class="start">
-      👇 Для начала тренировки откройте чат в правом нижнем углу
+    <div class="voice-box">
+
+      <button id="micButton">
+        🎤 Говорить
+      </button>
+
+      <div id="voiceStatus">
+        Нажмите кнопку и разрешите браузеру доступ к микрофону.
+      </div>
+
+      <div id="recognizedText"></div>
+
     </div>
 
   </div>
@@ -99,6 +118,90 @@
     ChatBotPro.init({
       guid: '8b37f529e255aadd249aa1fa36b84f'
     });
+  </script>
+
+
+  <!-- Voice Recognition -->
+
+  <script>
+
+    const micButton = document.getElementById('micButton');
+    const voiceStatus = document.getElementById('voiceStatus');
+    const recognizedText = document.getElementById('recognizedText');
+
+    const SpeechRecognition =
+      window.SpeechRecognition || window.webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+
+      micButton.disabled = true;
+      voiceStatus.textContent =
+        'Голосовой ввод не поддерживается этим браузером. Используйте Chrome или Edge.';
+
+    } else {
+
+      const recognition = new SpeechRecognition();
+
+      recognition.lang = 'ru-RU';
+      recognition.interimResults = false;
+      recognition.continuous = false;
+
+      micButton.addEventListener('click', () => {
+
+        recognizedText.textContent = '';
+
+        voiceStatus.textContent = '🎤 Говорите...';
+
+        try {
+          recognition.start();
+        } catch (e) {
+          console.log(e);
+        }
+
+      });
+
+      recognition.onresult = function(event) {
+
+        const text = event.results[0][0].transcript;
+
+        recognizedText.textContent = 'Вы сказали: ' + text;
+
+        voiceStatus.textContent = 'Отправляю сообщение...';
+
+        if (window.ChatBotPro) {
+
+          window.ChatBotPro.sendMessageFromUser(text);
+
+          voiceStatus.textContent = '✅ Сообщение отправлено';
+
+        } else {
+
+          voiceStatus.textContent =
+            'Чат ещё не загрузился. Подождите несколько секунд и повторите.';
+
+        }
+
+      };
+
+      recognition.onerror = function(event) {
+
+        voiceStatus.textContent =
+          'Не удалось распознать речь. Попробуйте ещё раз.';
+
+        console.log(event.error);
+
+      };
+
+      recognition.onend = function() {
+
+        if (voiceStatus.textContent === '🎤 Говорите...') {
+          voiceStatus.textContent = 'Нажмите «Говорить» для следующей реплики.';
+        }
+
+      };
+
+    }
+
   </script>
 
 </body>
