@@ -129,15 +129,7 @@
       guid: '8b37f529e255aadd249aa1fa36b84f'
     });
   </script>
-  <script>
-    window.addEventListener('load', function () {
-      setTimeout(function () {
-        if (window.ChatBotPro && window.ChatBotPro.sendMessageFromUser) {
-          window.ChatBotPro.sendMessageFromUser('__NEW_TRAINING__');
-        }
-      }, 2500);
-    });
-  </script>
+  
   <!-- Voice Recognition -->
   <script>
     const micButton = document.getElementById('micButton');
@@ -243,44 +235,16 @@
 <script>
   document.getElementById('restartButton').addEventListener('click', function () {
 
-    // Очищаем локальные данные SaleBot в браузере
-    try {
-      for (let i = localStorage.length - 1; i >= 0; i--) {
-        const key = localStorage.key(i);
+    if (window.ChatBotPro && window.ChatBotPro.sendMessageFromUser) {
 
-        if (
-          key &&
-          (
-            key.toLowerCase().includes('salebot') ||
-            key.toLowerCase().includes('chatbot')
-          )
-        ) {
-          localStorage.removeItem(key);
-        }
-      }
+      // Команда SaleBot для сброса памяти AI
+      window.ChatBotPro.sendMessageFromUser('__NEW_TRAINING__');
 
-      for (let i = sessionStorage.length - 1; i >= 0; i--) {
-        const key = sessionStorage.key(i);
+    } else {
 
-        if (
-          key &&
-          (
-            key.toLowerCase().includes('salebot') ||
-            key.toLowerCase().includes('chatbot')
-          )
-        ) {
-          sessionStorage.removeItem(key);
-        }
-      }
-    } catch (e) {
-      console.log(e);
+      alert('Чат ещё загружается. Подождите несколько секунд и нажмите ещё раз.');
+
     }
-
-    // Даём SaleBot время обработать команду очистки,
-    // затем перезагружаем страницу
-    setTimeout(function () {
-      window.location.reload();
-    }, 1200);
 
   });
 </script>
