@@ -129,6 +129,15 @@
     });
   </script>
 
+  <script>
+    window.addEventListener('load', function () {
+      setTimeout(function () {
+        if (window.ChatBotPro && window.ChatBotPro.sendMessageFromUser) {
+          window.ChatBotPro.sendMessageFromUser('__NEW_TRAINING__');
+        }
+      }, 2500);
+    });
+  </script>
 
   <!-- Voice Recognition -->
 
