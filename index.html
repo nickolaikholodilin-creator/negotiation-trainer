@@ -101,34 +101,23 @@
       <p>4. После распознавания речь автоматически будет отправлена в чат.</p>
       <p>5. Тренажёр будет отвечать только текстом.</p>
     </div>
-
     <div class="voice-box">
-
       <button id="micButton">
         🎤 Говорить
       </button>
-
       <div id="voiceStatus">
         Нажмите кнопку и разрешите браузеру доступ к микрофону.
       </div>
-
       <div id="recognizedText"></div>
-
     </div>
-
   </div>
-
-
   <!-- SaleBot Online Chat -->
-
   <script src='https://salebot.pro/js/chatbot.js?v=1' charset='utf-8'></script>
-
   <script>
     ChatBotPro.init({
       guid: '8b37f529e255aadd249aa1fa36b84f'
     });
   </script>
-
   <script>
     window.addEventListener('load', function () {
       setTimeout(function () {
@@ -138,89 +127,111 @@
       }, 2500);
     });
   </script>
-
   <!-- Voice Recognition -->
-
   <script>
-
     const micButton = document.getElementById('micButton');
     const voiceStatus = document.getElementById('voiceStatus');
     const recognizedText = document.getElementById('recognizedText');
-
+ <!-- Voice Recognition -->
+  <script>
+    const micButton = document.getElementById('micButton');
+    const voiceStatus = document.getElementById('voiceStatus');
+    const recognizedText = document.getElementById('recognizedText');
     const SpeechRecognition =
       window.SpeechRecognition || window.webkitSpeechRecognition;
-
     if (!SpeechRecognition) {
-
       micButton.disabled = true;
       voiceStatus.textContent =
         'Голосовой ввод не поддерживается этим браузером. Используйте Chrome или Edge.';
 
     } else {
-
       const recognition = new SpeechRecognition();
-
       recognition.lang = 'ru-RU';
       recognition.interimResults = false;
       recognition.continuous = false;
-
-      micButton.addEventListener('click', () => {
-
-        recognizedText.textContent = '';
-
-        voiceStatus.textContent = '🎤 Говорите...';
-
+      let fullText = '';
+      let silenceTimer = null;
+      let listening = false;
+      let manualStop = false;
+      const SILENCE_DELAY = 4000; // 4 секунды тишины до отправки
+      function startRecognition() {
         try {
           recognition.start();
+          listening = true;
         } catch (e) {
           console.log(e);
         }
+      }
+      function scheduleSend() {
+        clearTimeout(silenceTimer);
+        silenceTimer = setTimeout(() => {
+          const textToSend = fullText.trim();
+          if (!textToSend) return;
+          voiceStatus.textContent = 'Отправляю сообщение...';
+          if (
+            window.ChatBotPro &&
+            window.ChatBotPro.sendMessageFromUser
+          ) {
+            window.ChatBotPro.sendMessageFromUser(textToSend);
+            recognizedText.textContent =
+              'Вы сказали: ' + textToSend;
+            voiceStatus.textContent = '✅ Сообщение отправлено';
+            fullText = '';
+            manualStop = true;
+            try {
+              recognition.stop();
+            } catch (e) {}
 
+          } else {
+            voiceStatus.textContent =
+              'Чат ещё не загрузился. Подождите несколько секунд и повторите.';
+          }
+        }, SILENCE_DELAY);
+      }
+      micButton.addEventListener('click', () => {
+        fullText = '';
+        manualStop = false;
+        clearTimeout(silenceTimer);
+        recognizedText.textContent = '';
+        voiceStatus.textContent = '🎤 Говорите...';
+        startRecognition();
       });
-
       recognition.onresult = function(event) {
-
-        const text = event.results[0][0].transcript;
-
-        recognizedText.textContent = 'Вы сказали: ' + text;
-
-        voiceStatus.textContent = 'Отправляю сообщение...';
-
-        if (window.ChatBotPro) {
-
-          window.ChatBotPro.sendMessageFromUser(text);
-
-          voiceStatus.textContent = '✅ Сообщение отправлено';
-
-        } else {
-
-          voiceStatus.textContent =
-            'Чат ещё не загрузился. Подождите несколько секунд и повторите.';
-
+      let newText = '';
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        if (event.results[i].isFinal) {
+          newText += event.results[i][0].transcript + ' ';
         }
-
-      };
-
-      recognition.onerror = function(event) {
-
+      }
+      if (newText.trim()) {
+        fullText += newText;
+        recognizedText.textContent =
+          'Распознано: ' + fullText.trim();
+        voiceStatus.textContent =
+          '🎤 Продолжайте говорить. Отправка после 4 секунд тишины...';
+        scheduleSend();
+      }
+    };
+    recognition.onerror = function(event) {
+      console.log(event.error);
+      if (
+        event.error !== 'no-speech' &&
+        event.error !== 'aborted'
+      ) {
         voiceStatus.textContent =
           'Не удалось распознать речь. Попробуйте ещё раз.';
-
-        console.log(event.error);
-
-      };
-
-      recognition.onend = function() {
-
-        if (voiceStatus.textContent === '🎤 Говорите...') {
-          voiceStatus.textContent = 'Нажмите «Говорить» для следующей реплики.';
-        }
-
-      };
-
-    }
-
-  </script>
-
-</body>
-</html>
+      }
+    };
+    recognition.onend = function() {
+      listening = false;
+      if (!manualStop && fullText.trim()) {
+        setTimeout(() => {
+          startRecognition();
+        }, 200);
+      } else if (!manualStop && !fullText.trim()) {
+        voiceStatus.textContent =
+          'Нажмите «Говорить» для начала реплики.';
+      }
+    };
+  }
+</script>   
