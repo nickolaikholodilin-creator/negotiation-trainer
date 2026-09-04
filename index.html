@@ -57,7 +57,14 @@
       border-radius: 14px;
       background: #f7f8fa;
     }
-
+    #restartButton {
+      border: none;
+      border-radius: 14px;
+      padding: 16px 26px;
+      font-size: 18px;
+      cursor: pointer;
+      margin-bottom: 20px;
+    }
     #micButton {
       border: none;
       border-radius: 14px;
@@ -84,7 +91,7 @@
 
   <div class="container">
 
-    <img src="Логотип вартон без слогана.jpg" alt="VARTON" class="logo">
+    <img src="varton-logo.jpg" alt="VARTON" class="logo">
     
     <h1>Тренажёр переговоров</h1>
 
@@ -102,6 +109,10 @@
       <p>5. Тренажёр будет отвечать только текстом.</p>
     </div>
     <div class="voice-box">
+      <button id="restartButton">
+        🔄 Начать новую тренировку
+      </button>
+    <br>  
       <button id="micButton">
         🎤 Говорить
       </button>
@@ -132,18 +143,12 @@
     const micButton = document.getElementById('micButton');
     const voiceStatus = document.getElementById('voiceStatus');
     const recognizedText = document.getElementById('recognizedText');
- <!-- Voice Recognition -->
-  <script>
-    const micButton = document.getElementById('micButton');
-    const voiceStatus = document.getElementById('voiceStatus');
-    const recognizedText = document.getElementById('recognizedText');
     const SpeechRecognition =
       window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
       micButton.disabled = true;
       voiceStatus.textContent =
         'Голосовой ввод не поддерживается этим браузером. Используйте Chrome или Edge.';
-
     } else {
       const recognition = new SpeechRecognition();
       recognition.lang = 'ru-RU';
@@ -181,13 +186,13 @@
             try {
               recognition.stop();
             } catch (e) {}
-
           } else {
             voiceStatus.textContent =
               'Чат ещё не загрузился. Подождите несколько секунд и повторите.';
           }
         }, SILENCE_DELAY);
       }
+      
       micButton.addEventListener('click', () => {
         fullText = '';
         manualStop = false;
@@ -235,3 +240,49 @@
     };
   }
 </script>   
+<script>
+  document.getElementById('restartButton').addEventListener('click', function () {
+
+    // Очищаем локальные данные SaleBot в браузере
+    try {
+      for (let i = localStorage.length - 1; i >= 0; i--) {
+        const key = localStorage.key(i);
+
+        if (
+          key &&
+          (
+            key.toLowerCase().includes('salebot') ||
+            key.toLowerCase().includes('chatbot')
+          )
+        ) {
+          localStorage.removeItem(key);
+        }
+      }
+
+      for (let i = sessionStorage.length - 1; i >= 0; i--) {
+        const key = sessionStorage.key(i);
+
+        if (
+          key &&
+          (
+            key.toLowerCase().includes('salebot') ||
+            key.toLowerCase().includes('chatbot')
+          )
+        ) {
+          sessionStorage.removeItem(key);
+        }
+      }
+    } catch (e) {
+      console.log(e);
+    }
+
+    // Даём SaleBot время обработать команду очистки,
+    // затем перезагружаем страницу
+    setTimeout(function () {
+      window.location.reload();
+    }, 1200);
+
+  });
+</script>
+</body>
+</html>
